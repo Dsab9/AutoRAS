@@ -1,7 +1,7 @@
 from pathlib import Path
 import os
 
-# ______File intended for initializing run conditions______ #
+# calibration config file
 
 
 # define relevant file paths, calibration parameters, and define channel centerline
