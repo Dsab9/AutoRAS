@@ -1,8 +1,8 @@
 import scipy.optimize
 import pandas as pd
 import numpy as np
-from support import *
-from setup import *
+from model import *
+from config import *
 
 
 def n_m_function(output_n):
