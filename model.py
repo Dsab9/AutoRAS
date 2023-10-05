@@ -7,6 +7,7 @@ import h5py
 import os
 import win32com.client
 import copy
+from rasfileparser import FlowFileParser, PlanFileParser
 
 
 class HydraulicModel:
@@ -16,12 +17,28 @@ class HydraulicModel:
 
 class HecRas(HydraulicModel):
 
-    def __init__(self, project_file):
+    def __init__(self, project_file, geom_hdf, plan_hdf, flowfile, planfile):
         super().__init__()
         self.project_path = project_file
-        self.geom_pth = geometry_file
-        self.plan_pth = plan_file
+        self.geom_hdf = geom_hdf
+        self.plan_hdf = plan_hdf
+        self.flowfile = flowfile
+        self.planfile = planfile
 
+    def change_unsteady_flow(self, time_series):
+        u0file = FlowFileParser(self.flowfile)
+        p0file = PlanFileParser(self.planfile)
+
+        u0file.update_unsteady_flow(time_series)
+        p0file.update_simulation_date(time_series)
+
+    def get_inflow(self):
+        with h5py.File(self.plan_hdf, 'r') as phf:
+            sg_flw_tab = phf[
+                'Results/Unsteady/Output/Output Blocks/Base Output/Unsteady Time Series/Boundary Conditions/Upstream Inflow']
+            sg_flw_arr = np.array(sg_flw_tab)
+
+        return sg_flw_arr
 
     def run_model(self):
         """

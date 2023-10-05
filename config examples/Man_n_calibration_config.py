@@ -20,12 +20,11 @@ iterations_filename = Path('model_iterations.csv')
 wse_prof_filename = Path('wse_profiles.csv')
 
 # define mannings values per region
-Man_n_params = ['UP_R_OVRB', 'UP_L_OVRB', 'DWN_R_OVRB', 'DWN_L_OVRB']
+Man_n_params = ['UP_R_CHN', 'UP_L_CHN', 'DWN_R_CHN', 'DWN_L_CHN']
 Man_n_vals = [0.02, 0.03, 0.02, 0.03]
-Q_params = ['upstrmQ']
-Q_params_vals = [42.5]
-bounds = ((0.09, 0.3), (0.09, 0.3), (0.09, 0.3), (0.09, 0.3), (28.3, 85))
-max_runs = 75
+bounds = ((0.005, 0.15), (0.005, 0.15), (0.005, 0.15), (0.005, 0.15))
+max_runs = 50
+
 
 
 # prior_n = [.02, .02, .02, .02]
