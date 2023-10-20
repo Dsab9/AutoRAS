@@ -135,26 +135,9 @@ if __name__ == "__main__":
     # run nelder-mead algorithm
     scipy_nelder_mead(i0_simp)
     # create calibration report
-    hecras_indirectQ_report(config.working_dir, "HECRAS_20220613_Indirect_Report.ipynb")
+    hecras_indirectQ_report(config.working_dir)
 
 
-############################################
-# import pandas as pd
-# from pathlib import Path
-# # Combine n values for 2 calibration runs
-# iterations1_filename = Path(r'D:\HEC-RAS Projects\WF_Rock_Cr\Lidar_Terrain_Version\20220927_Calibration\model_iterations.csv')
-# iterations2_filename = Path(r'D:\HEC-RAS Projects\WF_Rock_Cr\Lidar_Terrain_Version\20220628_Calibration\model_iterations.csv')
-# itdf1 = pd.read_csv(iterations1_filename)
-# itdf2 = pd.read_csv(iterations2_filename)
-# com = pd.concat([itdf1, itdf2])
-# print(com['UP_R_CHN'].median())
-# print(com['UP_R_CHN'].mean())
-# print(com['UP_L_CHN'].median())
-# print(com['UP_L_CHN'].mean())
-# print(com['DWN_L_CHN'].median())
-# print(com['DWN_L_CHN'].mean())
-# print(com['DWN_R_CHN'].median())
-# print(com['DWN_R_CHN'].mean())
 
 
 
