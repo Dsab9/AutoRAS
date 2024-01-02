@@ -12,25 +12,33 @@ from reporting import hecras_calibration_report, hecras_indirectQ_report
 
 
 def calc_obj_function(input_vals):
-    # save mannings to hdf
-    #n_values = str(output_n)
+    # save manning's n to hdf
+    # n_values = str(output_n)
     # Initialize an existing HEC-RAS model
-    hecmodel = HecRas(config.prj_filename, config.ghdf_filename, config.phdf_filename, config.flow_filename, config.plan_filename)
+    hecmodel = HecRas(config.prj_filename, config.ghdf_filename, config.phdf_filename, config.flow_filename,
+                      config.plan_filename)
     # Convert Manning's n calibration parameters to binary encoded
     man_n_params_bn = hecmodel.string_to_binary(config.Man_n_params)
     print(f"All values in: {input_vals}")
-    # Build Manning's n parameter dictionary
-    new_n = hecmodel.assign_param_vals(input_vals[:-1], man_n_params_bn)
-    # Update only the specified Manning's n region values with new values
-    hecmodel.change_Base_Mannings(config.ghdf_filename, new_n)
-    # Create value array for unsteady flow timeseries
-    vals = np.empty(len(dr))
-    vals.fill(input_vals[-1])
-    rvals = np.round(vals, decimals=2)
-    # Initialize a timeseries to change unsteady flows
-    ts = pd.Series(rvals, index=pd.DatetimeIndex(dr))
-    # Update unsteady Q in HEC-RAS flowfile
-    hecmodel.change_unsteady_flow(ts)
+    # Create value array for unsteady flow timeseries????
+    # vals = np.empty(len(dr))
+    # vals.fill(input_vals[-1])
+    # rvals = np.round(vals, decimals=2)
+    if config.cal_indirect is True:
+        # Build Manning's n parameter dictionary
+        new_n = hecmodel.assign_param_vals(input_vals[:-1], man_n_params_bn)  # input_vals[:-1]
+        # Update only the specified Manning's n region values with new values
+        hecmodel.change_Base_Mannings(config.ghdf_filename, new_n)
+        # Initialize a timeseries to change unsteady flows
+        # ts = pd.Series(rvals, index=pd.DatetimeIndex(dr))
+        # Update unsteady Q in HEC-RAS flowfile
+        hecmodel.change_unsteady_flow(input_vals[-1])
+    else:
+        # Build Manning's n parameter dictionary
+        new_n = hecmodel.assign_param_vals(input_vals, man_n_params_bn)  # input_vals[:-1]
+        # Update only the specified Manning's n region values with new values
+        hecmodel.change_Base_Mannings(config.ghdf_filename, new_n)
+
 
     # Run RAS
     hecmodel.run_model()
@@ -89,7 +97,10 @@ def calc_obj_function(input_vals):
 
 
 def scipy_nelder_mead(initial_simplex=None):
-    initial_values = config.Man_n_vals + config.Q_params_vals
+    if config.cal_indirect is True:
+        initial_values = config.Man_n_vals + config.Q_params_vals
+    else:
+        initial_values = config.Man_n_vals
     x0 = np.array(initial_values)
     if initial_simplex is None:
         result = scipy.optimize.minimize(calc_obj_function, x0, method='Nelder-Mead',
@@ -103,6 +114,39 @@ def scipy_nelder_mead(initial_simplex=None):
                                                   'disp': True})
     print(f"Nelder-Mead result: {result}")
 
+
+def generate_hydrograph(max_q, max_runs):
+    current_run = 1
+    q_increment = max_q / max_runs
+    while max_runs >= current_run:
+        q_val = current_run * q_increment
+        hecmodel = HecRas(config.prj_filename, config.ghdf_filename, config.phdf_filename, config.flow_filename,
+                          config.plan_filename)
+        hecmodel.change_unsteady_flow(q_val)
+        # Run RAS
+        hecmodel.run_model()
+
+        phdf = hecmodel.load_current_plan_results(config.phdf_filename)
+        # get last time step of simulation
+        ras_wse = phdf[-1]
+        # get water surface elevation data at reference points for model run
+        ras_wse_pnts = ras_wse[Obs_df['Cell_Index'].astype(int).tolist()]  # not working? Don't need list in this instance
+        print(ras_wse)
+       # archives wse profiles for each model run with additional cell information
+        # if it doesn't exist, initialize it by creating the 1st entry
+        if not config.rating_curve_filename.is_file():
+            rc_df = pd.DataFrame(columns=['Elev_orif', 'WSE', 'stage', 'Q'])
+            new_row = {'Elev_orif': config.gauge_el_NAVD88m, 'WSE': ras_wse_pnts[-1],
+                       'stage': (ras_wse_pnts[-1] - config.gauge_el_NAVD88m), 'Q': q_val}
+            rc_df.loc[len(rc_df)] = new_row
+            rc_df.to_csv(config.rating_curve_filename, index=False)
+        else:
+            rc_df = pd.read_csv(config.rating_curve_filename)
+            new_row = {'Elev_orif': config.gauge_el_NAVD88m, 'WSE': ras_wse_pnts[-1],
+                       'stage': (ras_wse_pnts[-1] - config.gauge_el_NAVD88m), 'Q': q_val}
+            rc_df.loc[len(rc_df)] = new_row
+            rc_df.to_csv(config.rating_curve_filename, index=False)
+        current_run += 1
 
 def create_i0_simplex(i0_guess):
     array_list = []
@@ -127,6 +171,7 @@ def create_i0_simplex(i0_guess):
     array_list.append(temp_list)
 
     i0_simplex = np.array(array_list)
+    # print(f"i0_simplex: {i0_simplex}")
     return i0_simplex
 
 
@@ -144,36 +189,35 @@ if __name__ == "__main__":
     # append distances with observation points
     Obs_df['Channel_Distance'] = cntrl_dists
     # Create date_range for unsteady flow hydrograph
-    dr = pd.date_range('2022-06-12 01:00:00', freq='H', periods=2)
+    # dr = pd.date_range('2022-06-12 01:00:00', freq='H', periods=2)
+    if config.set_datetime is True:
+        hecmodel = HecRas(config.prj_filename, config.ghdf_filename, config.phdf_filename, config.flow_filename,
+                          config.plan_filename)
+        hecmodel.update_datetime()
 
     # initiate simplex
     i0_simp = create_i0_simplex(config.i0_guess)
+    print(f"initial simplex: {i0_simp}")
 
     # set working directory
     os.chdir(config.working_dir)
     # run nelder-mead algorithm
-    scipy_nelder_mead(i0_simp)
-    # create calibration report
-    hecras_indirectQ_report(config.working_dir, "HECRAS_20220613_Indirect_Report.ipynb")
+    if config.cal_indirect or config.cal_observed is True:
+        scipy_nelder_mead(i0_simp)
+    # option ot generate hydrograph, currently only works by iteself.
+    if config.gen_hydrograph is True:
+        generate_hydrograph(config.max_q, config.q_divisions)
 
+    # create calibration report
+    if config.cal_indirect is True:
+        hecras_indirectQ_report(config.working_dir, "HECRAS_Indirect_Report.ipynb")
+    elif config.cal_observed is True:
+        hecras_calibration_report(config.working_dir, "HECRAS_Calibration_Report.ipynb")
+    elif config.gen_hydrograph is True:
+        # generate hydrograph output based on specified manning's n and q range
+        pass
 
 ############################################
-# import pandas as pd
-# from pathlib import Path
-# # Combine n values for 2 calibration runs
-# iterations1_filename = Path(r'D:\HEC-RAS Projects\WF_Rock_Cr\Lidar_Terrain_Version\20220927_Calibration\model_iterations.csv')
-# iterations2_filename = Path(r'D:\HEC-RAS Projects\WF_Rock_Cr\Lidar_Terrain_Version\20220628_Calibration\model_iterations.csv')
-# itdf1 = pd.read_csv(iterations1_filename)
-# itdf2 = pd.read_csv(iterations2_filename)
-# com = pd.concat([itdf1, itdf2])
-# print(com['UP_R_CHN'].median())
-# print(com['UP_R_CHN'].mean())
-# print(com['UP_L_CHN'].median())
-# print(com['UP_L_CHN'].mean())
-# print(com['DWN_L_CHN'].median())
-# print(com['DWN_L_CHN'].mean())
-# print(com['DWN_R_CHN'].median())
-# print(com['DWN_R_CHN'].mean())
 
 
 

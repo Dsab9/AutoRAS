@@ -8,7 +8,7 @@ import h5py
 import os
 import win32com.client
 import copy
-from rasfileparser import FlowFileParser, PlanFileParser
+from new_rasfileparser import FlowFileParser, PlanFileParser
 
 
 class HydraulicModel:
@@ -26,17 +26,17 @@ class HecRas(HydraulicModel):
         self.flowfile = flowfile
         self.planfile = planfile
 
-    def change_unsteady_flow(self, time_series):
+    def change_unsteady_flow(self, q_val):
         u0file = FlowFileParser(self.flowfile)
-        p0file = PlanFileParser(self.planfile)
+        # p0file = PlanFileParser(self.planfile)
 
-        u0file.update_unsteady_flow(time_series)
-        p0file.update_simulation_date(time_series)
+        u0file.format_hydrograph_input(q_val)
+        # p0file.update_simulation_date(time_series)
 
     def get_inflow(self):
         with h5py.File(self.plan_hdf, 'r') as phf:
-            sg_flw_tab = phf[
-                'Results/Unsteady/Output/Output Blocks/Base Output/Unsteady Time Series/Boundary Conditions/Upstream Inflow']
+            sg_flw_tab = phf['Results/Unsteady/Output/Output Blocks/Base Output/Unsteady Time Series/' \
+                             'Boundary Conditions/BCUpstream']
             sg_flw_arr = np.array(sg_flw_tab)
 
         return sg_flw_arr
@@ -83,9 +83,8 @@ class HecRas(HydraulicModel):
 
             # Temp change here, just need to get the 2D results per grid cell for calibration
             with h5py.File(currentPlanFile, 'r') as rslt:
-                WSE = np.array(rslt[
-                                   "Results/Unsteady/Output/Output Blocks/Base Output/Unsteady Time Series/2D Flow Areas/"
-                                   "2D Flow Area/Water Surface"])
+                WSE = np.array(rslt["Results/Unsteady/Output/Output Blocks/Base Output/Unsteady Time Series/"
+                                    "2D Flow Areas/2D area/Water Surface"])
 
         return WSE
 
@@ -158,6 +157,7 @@ class HecRas(HydraulicModel):
         #bmnv = "Base Manning's n Value"
         #print(f"updt_man: {updt_man[bmnv][4]}")
         #print(updt_man.dtype)
+
 
     def assign_param_vals(self, n, params_list):
         if len(n) != len(params_list):

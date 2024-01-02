@@ -9,26 +9,25 @@ hec_version = '641'
 # define relevant file paths, calibration parameters, and define channel centerline
 prj_filename = Path(r'G:\WATER_MG\HEC-RAS\MillCreek_43B05990\Mill_Creek_2023.prj')
 ghdf_filename = Path(r'G:\WATER_MG\HEC-RAS\MillCreek_43B05990\Mill_Creek_2023.g01.hdf')
-phdf_filename = Path(r'G:\WATER_MG\HEC-RAS\MillCreek_43B05990\Mill_Creek_2023.p01.hdf')
-flow_filename = Path(r'G:\WATER_MG\HEC-RAS\MillCreek_43B05990\Mill_Creek_2023.u01')
-plan_filename = Path(r'G:\WATER_MG\HEC-RAS\MillCreek_43B05990Mill_Creek_2023.p01')
-WSP_filename = Path(r'G:\WATER_MG\HEC-RAS\MillCreek_43B05990\output_files\wse_profiles.csv')
+phdf_filename = Path(r'G:\WATER_MG\HEC-RAS\MillCreek_43B05990\Mill_Creek_2023.p04.hdf')
+flow_filename = Path(r'G:\WATER_MG\HEC-RAS\MillCreek_43B05990\Mill_Creek_2023.u04')
+plan_filename = Path(r'G:\WATER_MG\HEC-RAS\MillCreek_43B05990Mill_Creek_2023.p04')
+WSP_filename = Path(r'G:\WATER_MG\HEC-RAS\MillCreek_43B05990\output_files\channel_cal.csv')
 Cntrln_filename = Path(r'G:\WATER_MG\HEC-RAS\MillCreek_43B05990\Calculated Layers\centerline.shp')
 
 # Output file paths
 working_dir = Path(r'G:\WATER_MG\HEC-RAS\MillCreek_43B05990\output_files')
 simplex_filename = Path('simplex_dataframe.csv')
 iterations_filename = Path('model_iterations.csv')
-wse_prof_filename = Path('wse_profiles.csv')
+wse_prof_filename = Path('wse_profiles_output.csv')
 
 # define mannings values per region
-Man_n_params = ['UP_R_OVRB', 'UP_L_OVRB', 'DWN_R_OVRB', 'DWN_L_OVRB']
-Man_n_vals = [0.02, 0.03, 0.02, 0.03]
-Q_params = ['upstrmQ']
-Q_params_vals = [42.5]
-bounds = ((0.09, 0.3), (0.09, 0.3), (0.09, 0.3), (0.09, 0.3), (28.3, 85))
-i0_guess = ((0.09, 0.16), (0.09, 0.16), (0.09, 0.16), (0.09, 0.16), (42.0, 70.0))
-max_runs = 75
+Man_n_params = ['Channel']
+Man_n_vals = [0.01]
+
+bounds = [(0.001, 0.6)]
+i0_guess = [(0.08, 0.12)]
+max_runs = 50
 
 
 

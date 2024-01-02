@@ -1,36 +1,39 @@
 from pathlib import Path
 import os
-
-# calibration config file
+import pandas as pd
 
 # Versioning
 hec_version = '641'
+observed_cal = False
+indirect_cal = True
 
 # define relevant file paths, calibration parameters, and define channel centerline
 prj_filename = Path(r'G:\WATER_MG\HEC-RAS\MillCreek_43B05990\Mill_Creek_2023.prj')
 ghdf_filename = Path(r'G:\WATER_MG\HEC-RAS\MillCreek_43B05990\Mill_Creek_2023.g01.hdf')
-phdf_filename = Path(r'G:\WATER_MG\HEC-RAS\MillCreek_43B05990\Mill_Creek_2023.p01.hdf')
-flow_filename = Path(r'G:\WATER_MG\HEC-RAS\MillCreek_43B05990\Mill_Creek_2023.u01')
-plan_filename = Path(r'G:\WATER_MG\HEC-RAS\MillCreek_43B05990Mill_Creek_2023.p01')
-WSP_filename = Path(r'G:\WATER_MG\HEC-RAS\MillCreek_43B05990\output_files\wse_profiles.csv')
-Cntrln_filename = Path(r'G:\WATER_MG\HEC-RAS\MillCreek_43B05990\Calculated Layers\centerline.shp')
+phdf_filename = Path(r'G:\WATER_MG\HEC-RAS\MillCreek_43B05990\Mill_Creek_2023.p02.hdf')
+flow_filename = Path(r'G:\WATER_MG\HEC-RAS\MillCreek_43B05990\Mill_Creek_2023.u02')
+plan_filename = Path(r'G:\WATER_MG\HEC-RAS\MillCreek_43B05990\Mill_Creek_2023.p02')
+WSP_filename = Path(r'G:\WATER_MG\HEC-RAS\SpringHill_41O03000\Channel_calibration_data\channel_cal.csv')
+Cntrln_filename = Path(r'G:\WATER_MG\HEC-RAS\SpringHill_41O03000\Terrain\cntr_line.shp')
 
 # Output file paths
 working_dir = Path(r'G:\WATER_MG\HEC-RAS\MillCreek_43B05990\output_files')
-simplex_filename = Path('simplex_dataframe.csv')
-iterations_filename = Path('model_iterations.csv')
-wse_prof_filename = Path('wse_profiles.csv')
+simplex_filename = Path('simplex_dataframe_ind.csv')
+iterations_filename = Path('model_iterations_ind.csv')
+wse_prof_filename = Path('wse_profiles_output_ind.csv')
 
 # define mannings values per region
-Man_n_params = ['UP_R_OVRB', 'UP_L_OVRB', 'DWN_R_OVRB', 'DWN_L_OVRB']
-Man_n_vals = [0.02, 0.03, 0.02, 0.03]
+Man_n_params = ['NoData', 'Riparian']
+Man_n_vals = [0.1, 0.2]
+
 Q_params = ['upstrmQ']
 Q_params_vals = [42.5]
-bounds = ((0.09, 0.3), (0.09, 0.3), (0.09, 0.3), (0.09, 0.3), (28.3, 85))
-i0_guess = ((0.09, 0.16), (0.09, 0.16), (0.09, 0.16), (0.09, 0.16), (42.0, 70.0))
-max_runs = 75
 
+bounds = ((0.001, 0.9), (0.001, 0.9), (24.5, 84.0))
+i0_guess = ((0.15, 0.2), (0.3, .2), (30, 40))
+max_runs = 70
 
+date_range = pd.date_range('2023-05-18 00:00:00', freq='H', periods=2)
 
 
 # prior_n = [.02, .02, .02, .02]

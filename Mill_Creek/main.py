@@ -148,6 +148,7 @@ if __name__ == "__main__":
 
     # initiate simplex
     i0_simp = create_i0_simplex(config.i0_guess)
+    print(i0_simp)
 
     # set working directory
     os.chdir(config.working_dir)

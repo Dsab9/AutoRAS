@@ -8,7 +8,7 @@ import h5py
 import os
 import win32com.client
 import copy
-from rasfileparser import FlowFileParser, PlanFileParser
+from new_rasfileparser import FlowFileParser, PlanFileParser
 
 
 class HydraulicModel:
@@ -26,17 +26,17 @@ class HecRas(HydraulicModel):
         self.flowfile = flowfile
         self.planfile = planfile
 
-    def change_unsteady_flow(self, time_series):
+    def change_unsteady_flow(self, q_val):
         u0file = FlowFileParser(self.flowfile)
-        p0file = PlanFileParser(self.planfile)
+        # p0file = PlanFileParser(self.planfile)
 
-        u0file.update_unsteady_flow(time_series)
-        p0file.update_simulation_date(time_series)
+        u0file.format_hydrograph_input(q_val)
+        # p0file.update_simulation_date(time_series)
 
     def get_inflow(self):
         with h5py.File(self.plan_hdf, 'r') as phf:
-            sg_flw_tab = phf[
-                'Results/Unsteady/Output/Output Blocks/Base Output/Unsteady Time Series/Boundary Conditions/Upstream Inflow']
+            sg_flw_tab = phf['Results/Unsteady/Output/Output Blocks/Base Output/Unsteady Time Series/' \
+                             'Boundary Conditions/Upstream BC']
             sg_flw_arr = np.array(sg_flw_tab)
 
         return sg_flw_arr
@@ -83,9 +83,8 @@ class HecRas(HydraulicModel):
 
             # Temp change here, just need to get the 2D results per grid cell for calibration
             with h5py.File(currentPlanFile, 'r') as rslt:
-                WSE = np.array(rslt[
-                                   "Results/Unsteady/Output/Output Blocks/Base Output/Unsteady Time Series/2D Flow Areas/"
-                                   "2D Flow Area/Water Surface"])
+                WSE = np.array(rslt["Results/Unsteady/Output/Output Blocks/Base Output/Unsteady Time Series/"
+                                    "2D Flow Areas/Perimeter/Water Surface"])
 
         return WSE
 
@@ -133,7 +132,7 @@ class HecRas(HydraulicModel):
 
         Man_n = self.get_Mannings_calibration_regions(geometry_hdf)
         updt_man = Man_n.copy()
-        print(f"updt_man: {updt_man}")
+        print(f"existing mann: {updt_man}")
         new_params = new_param_dict
         print(f"new_params: {new_params}")
 
@@ -159,6 +158,7 @@ class HecRas(HydraulicModel):
         #print(f"updt_man: {updt_man[bmnv][4]}")
         #print(updt_man.dtype)
 
+
     def assign_param_vals(self, n, params_list):
         if len(n) != len(params_list):
             if len(n) == 1:
@@ -168,6 +168,7 @@ class HecRas(HydraulicModel):
                     "Only 1 new parameter value given with >1 parameters to change:\n "
                     "Assigning one value to all parameters")
             else:
+                print(f"params_list: {params_list}; n: {n}")
                 raise ValueError(
                     "Number of new values is >1 but < number of parameters to change. No parameter values assigned.")
         else:
@@ -176,6 +177,12 @@ class HecRas(HydraulicModel):
         return new_param_vals
         #new_param_vals = dict(zip(params_list, n))
         #return new_param_vals
+
+    def get_normal_depth(self):
+        mod_results = h5py.File(self.plan_hdf, 'r')
+        dwn_bc = mod_results[
+            'Event Conditions/Unsteady/Boundary Conditions/Normal Depths/2D: Perimeter BCLine: Downstream BC']
+        # print(f"Normal Depth Down_BC: {dwn_bc}")
 
     def string_to_binary(self, string):
         # input string or list of strings

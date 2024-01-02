@@ -20,7 +20,7 @@ def calc_obj_function(input_vals):
     man_n_params_bn = hecmodel.string_to_binary(config.Man_n_params)
     print(f"All values in: {input_vals}")
     # Build Manning's n parameter dictionary
-    new_n = hecmodel.assign_param_vals(input_vals[:-1], man_n_params_bn)
+    new_n = hecmodel.assign_param_vals(input_vals, man_n_params_bn) # input_vals[:-1]
     # Update only the specified Manning's n region values with new values
     hecmodel.change_Base_Mannings(config.ghdf_filename, new_n)
     # Create value array for unsteady flow timeseries
@@ -89,7 +89,10 @@ def calc_obj_function(input_vals):
 
 
 def scipy_nelder_mead(initial_simplex=None):
-    initial_values = config.Man_n_vals + config.Q_params_vals
+    if config.cal_indirect is True:
+        initial_values = config.Man_n_vals + config.Q_params_vals
+    else:
+        initial_values = config.Man_n_vals
     x0 = np.array(initial_values)
     if initial_simplex is None:
         result = scipy.optimize.minimize(calc_obj_function, x0, method='Nelder-Mead',
@@ -127,6 +130,7 @@ def create_i0_simplex(i0_guess):
     array_list.append(temp_list)
 
     i0_simplex = np.array(array_list)
+    # print(f"i0_simplex: {i0_simplex}")
     return i0_simplex
 
 
@@ -148,32 +152,17 @@ if __name__ == "__main__":
 
     # initiate simplex
     i0_simp = create_i0_simplex(config.i0_guess)
+    print(f"initial simplex: {i0_simp}")
 
     # set working directory
     os.chdir(config.working_dir)
     # run nelder-mead algorithm
     scipy_nelder_mead(i0_simp)
     # create calibration report
-    hecras_indirectQ_report(config.working_dir, "HECRAS_20220613_Indirect_Report.ipynb")
+    hecras_indirectQ_report(config.working_dir, "HECRAS_Springhill_Report.ipynb")
 
 
 ############################################
-# import pandas as pd
-# from pathlib import Path
-# # Combine n values for 2 calibration runs
-# iterations1_filename = Path(r'D:\HEC-RAS Projects\WF_Rock_Cr\Lidar_Terrain_Version\20220927_Calibration\model_iterations.csv')
-# iterations2_filename = Path(r'D:\HEC-RAS Projects\WF_Rock_Cr\Lidar_Terrain_Version\20220628_Calibration\model_iterations.csv')
-# itdf1 = pd.read_csv(iterations1_filename)
-# itdf2 = pd.read_csv(iterations2_filename)
-# com = pd.concat([itdf1, itdf2])
-# print(com['UP_R_CHN'].median())
-# print(com['UP_R_CHN'].mean())
-# print(com['UP_L_CHN'].median())
-# print(com['UP_L_CHN'].mean())
-# print(com['DWN_L_CHN'].median())
-# print(com['DWN_L_CHN'].mean())
-# print(com['DWN_R_CHN'].median())
-# print(com['DWN_R_CHN'].mean())
 
 
 
